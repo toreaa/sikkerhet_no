@@ -10,6 +10,7 @@ import {
   riskLevels,
   generateRiskMatrix,
   getRiskColorClasses,
+  getCIALabel,
 } from "@/data/ros-data"
 import {
   ArrowLeft,
@@ -19,6 +20,8 @@ import {
   ChevronUp,
   FileText,
   Download,
+  Table,
+  LayoutGrid,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -38,7 +41,7 @@ export function ROSAnalysis({
   onViewMeasures,
 }: ROSAnalysisProps) {
   const [expandedScenario, setExpandedScenario] = useState<string | null>(null)
-  const [activeTab, setActiveTab] = useState<"matrix" | "scenarios" | "summary">("matrix")
+  const [activeTab, setActiveTab] = useState<"table" | "matrix" | "scenarios" | "summary">("table")
 
   const matrix = generateRiskMatrix(assessments)
 
@@ -56,16 +59,15 @@ export function ROSAnalysis({
 
   // Fargekoder for matrisen
   const matrixColors = [
-    // Sannsynlighet: 1, 2, 3, 4
-    ["bg-green-500/30", "bg-green-500/30", "bg-yellow-500/30", "bg-yellow-500/30"], // Konsekvens 1
-    ["bg-green-500/30", "bg-yellow-500/30", "bg-yellow-500/30", "bg-orange-500/30"], // Konsekvens 2
-    ["bg-yellow-500/30", "bg-yellow-500/30", "bg-orange-500/30", "bg-red-500/30"], // Konsekvens 3
+    ["bg-green-500/30", "bg-green-500/30", "bg-yellow-500/30", "bg-yellow-500/30"],
+    ["bg-green-500/30", "bg-yellow-500/30", "bg-yellow-500/30", "bg-orange-500/30"],
+    ["bg-yellow-500/30", "bg-yellow-500/30", "bg-orange-500/30", "bg-red-500/30"],
   ]
 
   const matrixScores = [
-    [1, 2, 3, 4], // Konsekvens 1
-    [2, 4, 6, 8], // Konsekvens 2
-    [3, 6, 9, 12], // Konsekvens 3
+    [1, 2, 3, 4],
+    [2, 4, 6, 8],
+    [3, 6, 9, 12],
   ]
 
   return (
@@ -109,33 +111,46 @@ export function ROSAnalysis({
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 border-b border-border">
+      <div className="flex gap-1 border-b border-border overflow-x-auto">
+        <button
+          onClick={() => setActiveTab("table")}
+          className={cn(
+            "px-4 py-2 text-sm font-medium transition-all border-b-2 -mb-px whitespace-nowrap flex items-center gap-2",
+            activeTab === "table"
+              ? "border-primary text-foreground"
+              : "border-transparent text-muted-foreground hover:text-foreground"
+          )}
+        >
+          <Table className="h-4 w-4" />
+          ROS-tabell
+        </button>
         <button
           onClick={() => setActiveTab("matrix")}
           className={cn(
-            "px-4 py-2 text-sm font-medium transition-all border-b-2 -mb-px",
+            "px-4 py-2 text-sm font-medium transition-all border-b-2 -mb-px whitespace-nowrap flex items-center gap-2",
             activeTab === "matrix"
               ? "border-primary text-foreground"
               : "border-transparent text-muted-foreground hover:text-foreground"
           )}
         >
+          <LayoutGrid className="h-4 w-4" />
           Risikomatrise
         </button>
         <button
           onClick={() => setActiveTab("scenarios")}
           className={cn(
-            "px-4 py-2 text-sm font-medium transition-all border-b-2 -mb-px",
+            "px-4 py-2 text-sm font-medium transition-all border-b-2 -mb-px whitespace-nowrap",
             activeTab === "scenarios"
               ? "border-primary text-foreground"
               : "border-transparent text-muted-foreground hover:text-foreground"
           )}
         >
-          Trusselscenarier ({assessments.length})
+          Detaljer ({assessments.length})
         </button>
         <button
           onClick={() => setActiveTab("summary")}
           className={cn(
-            "px-4 py-2 text-sm font-medium transition-all border-b-2 -mb-px",
+            "px-4 py-2 text-sm font-medium transition-all border-b-2 -mb-px whitespace-nowrap",
             activeTab === "summary"
               ? "border-primary text-foreground"
               : "border-transparent text-muted-foreground hover:text-foreground"
@@ -144,6 +159,99 @@ export function ROSAnalysis({
           Sammendrag
         </button>
       </div>
+
+      {/* ROS-tabell visning */}
+      {activeTab === "table" && (
+        <div className="space-y-4">
+          <div className="text-sm text-muted-foreground mb-4">
+            <span className="font-medium">K</span>=Konfidensialitet, <span className="font-medium">I</span>=Integritet, <span className="font-medium">T</span>=Tilgjengelighet
+          </div>
+
+          <div className="rounded-xl border border-border bg-card overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border bg-muted/50">
+                    <th className="text-left p-3 font-medium text-muted-foreground">ID#</th>
+                    <th className="text-left p-3 font-medium text-muted-foreground min-w-[150px]">Scenario</th>
+                    <th className="text-left p-3 font-medium text-muted-foreground min-w-[200px]">Sårbarhet beskrivelse</th>
+                    <th className="text-left p-3 font-medium text-muted-foreground min-w-[200px]">Konsekvens beskrivelse</th>
+                    <th className="text-center p-3 font-medium text-muted-foreground">K, I, T</th>
+                    <th className="text-left p-3 font-medium text-muted-foreground min-w-[200px]">Eksisterende tiltak</th>
+                    <th className="text-center p-3 font-medium text-muted-foreground" colSpan={3}>
+                      <div>Vurdering før tiltak</div>
+                      <div className="flex gap-2 mt-1 justify-center text-xs">
+                        <span>S</span>
+                        <span>K</span>
+                        <span>S×K</span>
+                      </div>
+                    </th>
+                    <th className="text-left p-3 font-medium text-muted-foreground min-w-[200px]">Ytterligere tiltak</th>
+                    <th className="text-center p-3 font-medium text-muted-foreground" colSpan={3}>
+                      <div>Vurdering etter tiltak</div>
+                      <div className="flex gap-2 mt-1 justify-center text-xs">
+                        <span>S</span>
+                        <span>K</span>
+                        <span>S×K</span>
+                      </div>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {assessments.map((assessment, index) => {
+                    const beforeColors = getRiskColorClasses(assessment.riskScore)
+                    const afterColors = getRiskColorClasses(assessment.mitigatedRiskScore)
+
+                    return (
+                      <tr key={assessment.scenario.id} className="border-b border-border/50 last:border-0 hover:bg-muted/30">
+                        <td className="p-3 text-foreground font-medium">{index + 1}</td>
+                        <td className="p-3 text-foreground font-medium">{assessment.scenario.name}</td>
+                        <td className="p-3 text-muted-foreground text-xs">{assessment.scenario.vulnerabilityDescription}</td>
+                        <td className="p-3 text-muted-foreground text-xs">{assessment.scenario.consequenceDescription}</td>
+                        <td className="p-3 text-center">
+                          <Badge variant="outline" className="text-xs">
+                            {getCIALabel(assessment.scenario.ciaImpact)}
+                          </Badge>
+                        </td>
+                        <td className="p-3 text-muted-foreground text-xs">
+                          <ul className="space-y-1">
+                            {assessment.applicableExistingMeasures.slice(0, 3).map((measure, i) => (
+                              <li key={i}>• {measure}</li>
+                            ))}
+                          </ul>
+                        </td>
+                        {/* Før tiltak */}
+                        <td className="p-3 text-center font-medium">{assessment.adjustedProbability}</td>
+                        <td className="p-3 text-center font-medium">{assessment.adjustedConsequence}</td>
+                        <td className="p-3 text-center">
+                          <Badge className={cn(beforeColors.bg, beforeColors.text, "font-bold")}>
+                            {assessment.riskScore}
+                          </Badge>
+                        </td>
+                        <td className="p-3 text-muted-foreground text-xs">
+                          <ul className="space-y-1">
+                            {assessment.applicableAdditionalMeasures.slice(0, 3).map((measure, i) => (
+                              <li key={i}>• {measure}</li>
+                            ))}
+                          </ul>
+                        </td>
+                        {/* Etter tiltak */}
+                        <td className="p-3 text-center font-medium">{assessment.mitigatedProbability}</td>
+                        <td className="p-3 text-center font-medium">{assessment.mitigatedConsequence}</td>
+                        <td className="p-3 text-center">
+                          <Badge className={cn(afterColors.bg, afterColors.text, "font-bold")}>
+                            {assessment.mitigatedRiskScore}
+                          </Badge>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Matrise-visning */}
       {activeTab === "matrix" && (
@@ -154,18 +262,14 @@ export function ROSAnalysis({
             </h3>
 
             <div className="min-w-[500px]">
-              {/* Matrise */}
               <div className="flex">
-                {/* Y-akse label */}
                 <div className="flex flex-col justify-center mr-2">
                   <span className="text-xs text-muted-foreground -rotate-90 whitespace-nowrap">
                     KONSEKVENS →
                   </span>
                 </div>
 
-                {/* Matrise-innhold */}
                 <div className="flex-1">
-                  {/* Header rad */}
                   <div className="flex mb-1">
                     <div className="w-24" />
                     {[1, 2, 3, 4].map((prob) => (
@@ -178,7 +282,6 @@ export function ROSAnalysis({
                     ))}
                   </div>
 
-                  {/* Matrise-rader (reversert for å ha høy konsekvens øverst) */}
                   {[2, 1, 0].map((consIndex) => (
                     <div key={consIndex} className="flex mb-1">
                       <div className="w-24 flex items-center text-xs font-medium text-muted-foreground pr-2">
@@ -205,7 +308,6 @@ export function ROSAnalysis({
                     </div>
                   ))}
 
-                  {/* X-akse label */}
                   <div className="text-center text-xs text-muted-foreground mt-2">
                     SANNSYNLIGHET →
                   </div>
@@ -214,7 +316,6 @@ export function ROSAnalysis({
             </div>
           </div>
 
-          {/* Forklaring */}
           <div className="rounded-xl border border-border bg-card p-6">
             <h4 className="font-semibold text-foreground mb-4">Risikonivåer</h4>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -265,12 +366,18 @@ export function ROSAnalysis({
                 >
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
+                      <div className="flex items-center gap-2 mb-1 flex-wrap">
                         <Badge variant="outline" className="text-xs">
                           {assessment.scenario.category}
                         </Badge>
+                        <Badge variant="outline" className="text-xs">
+                          {getCIALabel(assessment.scenario.ciaImpact)}
+                        </Badge>
                         <Badge className={cn(colors.bg, colors.text, "text-xs")}>
-                          Risiko: {assessment.riskScore}
+                          Før: {assessment.riskScore}
+                        </Badge>
+                        <Badge className={cn(getRiskColorClasses(assessment.mitigatedRiskScore).bg, getRiskColorClasses(assessment.mitigatedRiskScore).text, "text-xs")}>
+                          Etter: {assessment.mitigatedRiskScore}
                         </Badge>
                       </div>
                       <h3 className="font-semibold text-foreground">
@@ -298,66 +405,87 @@ export function ROSAnalysis({
 
                 {isExpanded && (
                   <div className="px-5 pb-5 border-t border-border/50 pt-4 space-y-4">
-                    {/* Tekniske detaljer */}
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div>
+                        <h4 className="font-medium text-foreground text-sm mb-2">Sårbarhet</h4>
+                        <p className="text-sm text-muted-foreground">
+                          {assessment.scenario.vulnerabilityDescription}
+                        </p>
+                      </div>
+                      <div>
+                        <h4 className="font-medium text-foreground text-sm mb-2">Konsekvens</h4>
+                        <p className="text-sm text-muted-foreground">
+                          {assessment.scenario.consequenceDescription}
+                        </p>
+                      </div>
+                    </div>
+
                     <div>
-                      <h4 className="font-medium text-foreground text-sm mb-2">
-                        Tekniske detaljer
-                      </h4>
+                      <h4 className="font-medium text-foreground text-sm mb-2">Tekniske detaljer</h4>
                       <p className="text-sm text-muted-foreground">
                         {assessment.scenario.technicalDetails}
                       </p>
                     </div>
 
-                    {/* Vurdering */}
                     <div className="grid md:grid-cols-2 gap-4">
                       <div>
                         <h4 className="font-medium text-foreground text-sm mb-2">
-                          Sannsynlighet: {assessment.adjustedProbability}/4
+                          Eksisterende tiltak
                         </h4>
-                        <p className="text-xs text-muted-foreground mb-2">
-                          {probabilityLevels[assessment.adjustedProbability as 1 | 2 | 3 | 4]?.description}
-                        </p>
-                        <ul className="text-xs text-muted-foreground space-y-1">
-                          {assessment.scenario.probabilityFactors.map((factor, i) => (
-                            <li key={i} className="flex items-start gap-1">
-                              <span className="text-orange-500">•</span>
-                              {factor}
+                        <ul className="text-sm text-muted-foreground space-y-1">
+                          {assessment.applicableExistingMeasures.map((measure, i) => (
+                            <li key={i} className="flex items-start gap-2">
+                              <span className="text-blue-500 mt-0.5">✓</span>
+                              {measure}
                             </li>
                           ))}
                         </ul>
                       </div>
                       <div>
-                        <h4 className="font-medium text-foreground text-sm mb-2">
-                          Konsekvens: {assessment.adjustedConsequence}/3
+                        <h4 className="font-medium text-foreground text-sm mb-2 flex items-center gap-2">
+                          <Shield className="h-4 w-4 text-primary" />
+                          Ytterligere tiltak
                         </h4>
-                        <p className="text-xs text-muted-foreground mb-2">
-                          {consequenceLevels[assessment.adjustedConsequence as 1 | 2 | 3]?.description}
-                        </p>
-                        <ul className="text-xs text-muted-foreground space-y-1">
-                          {assessment.scenario.consequenceFactors.map((factor, i) => (
-                            <li key={i} className="flex items-start gap-1">
-                              <span className="text-red-500">•</span>
-                              {factor}
+                        <ul className="text-sm text-muted-foreground space-y-1">
+                          {assessment.applicableAdditionalMeasures.map((measure, i) => (
+                            <li key={i} className="flex items-start gap-2">
+                              <span className="text-green-500 mt-0.5">+</span>
+                              {measure}
                             </li>
                           ))}
                         </ul>
                       </div>
                     </div>
 
-                    {/* Anbefalte tiltak */}
-                    <div>
-                      <h4 className="font-medium text-foreground text-sm mb-2 flex items-center gap-2">
-                        <Shield className="h-4 w-4 text-primary" />
-                        Anbefalte tiltak
-                      </h4>
-                      <ul className="text-sm text-muted-foreground space-y-1">
-                        {assessment.applicableMitigations.map((mitigation, i) => (
-                          <li key={i} className="flex items-start gap-2">
-                            <span className="text-green-500 mt-0.5">✓</span>
-                            {mitigation}
-                          </li>
-                        ))}
-                      </ul>
+                    <div className="grid md:grid-cols-2 gap-4 p-4 bg-muted/30 rounded-lg">
+                      <div>
+                        <h4 className="font-medium text-foreground text-sm mb-2">Vurdering før tiltak</h4>
+                        <div className="flex items-center gap-4">
+                          <div className="text-sm">
+                            <span className="text-muted-foreground">Sannsynlighet:</span> <span className="font-medium">{assessment.adjustedProbability}</span>
+                          </div>
+                          <div className="text-sm">
+                            <span className="text-muted-foreground">Konsekvens:</span> <span className="font-medium">{assessment.adjustedConsequence}</span>
+                          </div>
+                          <Badge className={cn(colors.bg, colors.text, "font-bold")}>
+                            Risiko: {assessment.riskScore}
+                          </Badge>
+                        </div>
+                      </div>
+                      <div>
+                        <h4 className="font-medium text-foreground text-sm mb-2">Vurdering etter tiltak</h4>
+                        <div className="flex items-center gap-4">
+                          <div className="text-sm">
+                            <span className="text-muted-foreground">Sannsynlighet:</span> <span className="font-medium">{assessment.mitigatedProbability}</span>
+                          </div>
+                          <div className="text-sm">
+                            <span className="text-muted-foreground">Konsekvens:</span> <span className="font-medium">{assessment.mitigatedConsequence}</span>
+                          </div>
+                          <Badge className={cn(getRiskColorClasses(assessment.mitigatedRiskScore).bg, getRiskColorClasses(assessment.mitigatedRiskScore).text, "font-bold")}>
+                            Risiko: {assessment.mitigatedRiskScore}
+                          </Badge>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 )}
@@ -406,6 +534,15 @@ export function ROSAnalysis({
               </div>
 
               <div>
+                <h4 className="font-medium text-foreground text-sm mb-2">Effekt av tiltak</h4>
+                <p className="text-sm text-muted-foreground">
+                  Ved implementering av anbefalte tiltak vil risikoene reduseres betydelig.
+                  Gjennomsnittlig risikoscore før tiltak: <strong>{Math.round(assessments.reduce((sum, a) => sum + a.riskScore, 0) / assessments.length * 10) / 10}</strong>.
+                  Etter tiltak: <strong>{Math.round(assessments.reduce((sum, a) => sum + a.mitigatedRiskScore, 0) / assessments.length * 10) / 10}</strong>.
+                </p>
+              </div>
+
+              <div>
                 <h4 className="font-medium text-foreground text-sm mb-2">Prioriterte tiltak</h4>
                 <ul className="text-sm text-muted-foreground space-y-2">
                   {criticalCount > 0 && (
@@ -439,7 +576,6 @@ export function ROSAnalysis({
             </div>
           </div>
 
-          {/* Disclaimer */}
           <div className="rounded-xl border border-yellow-500/30 bg-yellow-500/10 p-4">
             <div className="flex items-start gap-3">
               <AlertTriangle className="h-5 w-5 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5" />
@@ -471,7 +607,6 @@ export function ROSAnalysis({
           variant="outline"
           className="flex-1 gap-2"
           onClick={() => {
-            // TODO: Implementer PDF-eksport
             alert("PDF-eksport kommer snart!")
           }}
         >
