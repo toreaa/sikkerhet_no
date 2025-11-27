@@ -23,24 +23,54 @@ import { cn } from "@/lib/utils"
 
 interface ClassificationWizardProps {
   onComplete: (level: 1 | 2 | 3 | 4, exposure: "internet" | "helsenett") => void
-  onROS: (level: 1 | 2 | 3 | 4, exposure: "internet" | "helsenett", answers: Record<string, string>, flags: string[]) => void
+  onROS: (level: 1 | 2 | 3 | 4, exposure: "internet" | "helsenett", answers: Record<string, string | string[]>, flags: string[]) => void
   onBack: () => void
 }
 
 export function ClassificationWizard({ onComplete, onROS, onBack }: ClassificationWizardProps) {
   const [currentStep, setCurrentStep] = useState(0)
-  const [answers, setAnswers] = useState<Record<string, string>>({})
+  const [answers, setAnswers] = useState<Record<string, string | string[]>>({})
   const [showResult, setShowResult] = useState(false)
 
   const allQuestions = [...classificationQuestions, ...exposureQuestions]
   const currentQuestion = allQuestions[currentStep]
   const totalSteps = allQuestions.length
+  const isMultiSelect = currentQuestion?.multiSelect === true
 
   const handleAnswer = (optionId: string) => {
-    setAnswers((prev) => ({
-      ...prev,
-      [currentQuestion.id]: optionId,
-    }))
+    if (isMultiSelect) {
+      setAnswers((prev) => {
+        const currentSelections = (prev[currentQuestion.id] as string[]) || []
+        const isSelected = currentSelections.includes(optionId)
+
+        // Hvis "none" velges, fjern alle andre valg
+        if (optionId === "none") {
+          return {
+            ...prev,
+            [currentQuestion.id]: isSelected ? [] : ["none"],
+          }
+        }
+
+        // Hvis noe annet velges, fjern "none" fra listen
+        let newSelections = currentSelections.filter((id) => id !== "none")
+
+        if (isSelected) {
+          newSelections = newSelections.filter((id) => id !== optionId)
+        } else {
+          newSelections = [...newSelections, optionId]
+        }
+
+        return {
+          ...prev,
+          [currentQuestion.id]: newSelections,
+        }
+      })
+    } else {
+      setAnswers((prev) => ({
+        ...prev,
+        [currentQuestion.id]: optionId,
+      }))
+    }
   }
 
   const handleNext = () => {
@@ -58,6 +88,22 @@ export function ClassificationWizard({ onComplete, onROS, onBack }: Classificati
   }
 
   const currentAnswer = answers[currentQuestion?.id]
+
+  const isOptionSelected = (optionId: string): boolean => {
+    if (isMultiSelect) {
+      const selections = (currentAnswer as string[]) || []
+      return selections.includes(optionId)
+    }
+    return currentAnswer === optionId
+  }
+
+  const hasAnswer = (): boolean => {
+    if (isMultiSelect) {
+      const selections = (currentAnswer as string[]) || []
+      return selections.length > 0
+    }
+    return !!currentAnswer
+  }
 
   if (showResult) {
     const result = calculateRecommendedLevel(answers)
@@ -269,41 +315,56 @@ export function ClassificationWizard({ onComplete, onROS, onBack }: Classificati
 
       {/* Alternativer */}
       <div className="space-y-3 max-w-2xl mx-auto">
-        {currentQuestion.options.map((option) => (
-          <button
-            key={option.id}
-            onClick={() => handleAnswer(option.id)}
-            className={cn(
-              "w-full rounded-xl border p-4 text-left transition-all",
-              currentAnswer === option.id
-                ? "border-primary bg-primary/5 ring-2 ring-primary/20"
-                : "border-border bg-card hover:border-primary/50"
-            )}
-          >
-            <div className="flex items-start gap-3">
-              <div
-                className={cn(
-                  "mt-0.5 h-5 w-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all",
-                  currentAnswer === option.id
-                    ? "border-primary bg-primary"
-                    : "border-muted-foreground/30"
-                )}
-              >
-                {currentAnswer === option.id && (
-                  <div className="h-2 w-2 rounded-full bg-white" />
-                )}
+        {isMultiSelect && (
+          <p className="text-sm text-muted-foreground text-center mb-2">
+            Du kan velge flere alternativer
+          </p>
+        )}
+        {currentQuestion.options.map((option) => {
+          const selected = isOptionSelected(option.id)
+          return (
+            <button
+              key={option.id}
+              onClick={() => handleAnswer(option.id)}
+              className={cn(
+                "w-full rounded-xl border p-4 text-left transition-all",
+                selected
+                  ? "border-primary bg-primary/5 ring-2 ring-primary/20"
+                  : "border-border bg-card hover:border-primary/50"
+              )}
+            >
+              <div className="flex items-start gap-3">
+                <div
+                  className={cn(
+                    "mt-0.5 h-5 w-5 border-2 flex items-center justify-center flex-shrink-0 transition-all",
+                    isMultiSelect ? "rounded-md" : "rounded-full",
+                    selected
+                      ? "border-primary bg-primary"
+                      : "border-muted-foreground/30"
+                  )}
+                >
+                  {selected && (
+                    isMultiSelect ? (
+                      <svg className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                    ) : (
+                      <div className="h-2 w-2 rounded-full bg-white" />
+                    )
+                  )}
+                </div>
+                <div>
+                  <div className="font-medium text-foreground">{option.label}</div>
+                  {option.description && (
+                    <div className="text-sm text-muted-foreground mt-1">
+                      {option.description}
+                    </div>
+                  )}
+                </div>
               </div>
-              <div>
-                <div className="font-medium text-foreground">{option.label}</div>
-                {option.description && (
-                  <div className="text-sm text-muted-foreground mt-1">
-                    {option.description}
-                  </div>
-                )}
-              </div>
-            </div>
-          </button>
-        ))}
+            </button>
+          )
+        })}
       </div>
 
       {/* Navigasjon */}
@@ -319,7 +380,7 @@ export function ClassificationWizard({ onComplete, onROS, onBack }: Classificati
         </Button>
         <Button
           onClick={handleNext}
-          disabled={!currentAnswer}
+          disabled={!hasAnswer()}
           className="gap-2"
         >
           {currentStep === totalSteps - 1 ? "Se resultat" : "Neste"}

@@ -60,10 +60,12 @@ export default function Home() {
   const handleROS = (
     level: 1 | 2 | 3 | 4,
     exposureType: "internet" | "helsenett",
-    answers: Record<string, string>,
+    answers: Record<string, string | string[]>,
     flags: string[]
   ) => {
-    const fullExposure = answers["network_exposure"] === "internal_only" || answers["network_exposure"] === "vpn"
+    const networkAnswer = answers["network_exposure"]
+    const networkValue = Array.isArray(networkAnswer) ? networkAnswer[0] : networkAnswer
+    const fullExposure = networkValue === "internal_only" || networkValue === "vpn"
       ? "internal"
       : exposureType
     const assessments = calculateRiskAssessment(answers, flags, fullExposure)

@@ -4,6 +4,7 @@ export interface ClassificationQuestion {
   id: string
   question: string
   description?: string
+  multiSelect?: boolean // Tillater flere valg
   options: ClassificationOption[]
 }
 
@@ -18,8 +19,9 @@ export interface ClassificationOption {
 export const classificationQuestions: ClassificationQuestion[] = [
   {
     id: "data_type",
-    question: "Hvilken type data behandler systemet?",
-    description: "Velg den mest sensitive datatypen systemet håndterer",
+    question: "Hvilke typer data behandler systemet?",
+    description: "Velg alle datatyper som gjelder",
+    multiSelect: true,
     options: [
       {
         id: "public",
@@ -193,7 +195,8 @@ export const classificationQuestions: ClassificationQuestion[] = [
   {
     id: "user_base",
     question: "Hvem har tilgang til systemet?",
-    description: "Vurder brukergruppens størrelse og sammensetning",
+    description: "Velg alle brukergrupper som har tilgang",
+    multiSelect: true,
     options: [
       {
         id: "internal_limited",
@@ -230,12 +233,13 @@ export const classificationQuestions: ClassificationQuestion[] = [
   },
   {
     id: "regulatory",
-    question: "Er systemet underlagt spesielle regulatoriske krav?",
-    description: "Velg alle som gjelder (velg det strengeste)",
+    question: "Er systemet underlagt spesielle regulatoriske krav som dere vet om?",
+    description: "Velg alle regelverk som gjelder for systemet",
+    multiSelect: true,
     options: [
       {
         id: "none",
-        label: "Ingen spesielle krav",
+        label: "Ingen spesielle krav vi kjenner til",
         description: "Standard IKT-sikkerhetskrav",
         points: 0,
       },
@@ -251,6 +255,13 @@ export const classificationQuestions: ClassificationQuestion[] = [
         description: "Behandler helseopplysninger",
         points: 3,
         flags: ["normen_required"],
+      },
+      {
+        id: "nis2",
+        label: "NIS2-direktivet",
+        description: "Kritisk infrastruktur eller viktig samfunnsfunksjon",
+        points: 3,
+        flags: ["nis2_required"],
       },
       {
         id: "security_law",
@@ -302,7 +313,7 @@ export const exposureQuestions: ClassificationQuestion[] = [
 
 // Funksjon for å beregne anbefalt nivå
 export function calculateRecommendedLevel(
-  answers: Record<string, string>
+  answers: Record<string, string | string[]>
 ): {
   level: 1 | 2 | 3 | 4
   confidence: "high" | "medium" | "low"
@@ -315,8 +326,13 @@ export function calculateRecommendedLevel(
 
   // Gå gjennom svar og samle poeng og flagg
   for (const question of classificationQuestions) {
-    const answerId = answers[question.id]
-    if (answerId) {
+    const answerValue = answers[question.id]
+    if (!answerValue) continue
+
+    // Håndter både enkeltvalg og multiselect
+    const answerIds = Array.isArray(answerValue) ? answerValue : [answerValue]
+
+    for (const answerId of answerIds) {
       const option = question.options.find((o) => o.id === answerId)
       if (option) {
         totalPoints += option.points
@@ -384,13 +400,14 @@ export function calculateRecommendedLevel(
 
 // Funksjon for å bestemme eksponering
 export function calculateExposure(
-  answers: Record<string, string>
+  answers: Record<string, string | string[]>
 ): "internet" | "helsenett" | "internal" {
   const networkAnswer = answers["network_exposure"]
+  const answer = Array.isArray(networkAnswer) ? networkAnswer[0] : networkAnswer
 
-  if (networkAnswer === "internet") {
+  if (answer === "internet") {
     return "internet"
-  } else if (networkAnswer === "helsenett") {
+  } else if (answer === "helsenett") {
     return "helsenett"
   }
   return "internal"

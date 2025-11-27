@@ -605,9 +605,16 @@ export const threatScenarios: ThreatScenario[] = [
   },
 ]
 
+// Hjelpefunksjon for å sjekke om et svar inneholder en verdi
+function answerIncludes(answer: string | string[] | undefined, value: string): boolean {
+  if (!answer) return false
+  if (Array.isArray(answer)) return answer.includes(value)
+  return answer === value
+}
+
 // Funksjon for å beregne risiko basert på klassifiseringssvar
 export function calculateRiskAssessment(
-  answers: Record<string, string>,
+  answers: Record<string, string | string[]>,
   flags: string[],
   exposure: "internet" | "helsenett" | "internal"
 ): RiskAssessment[] {
@@ -658,14 +665,14 @@ export function calculateRiskAssessment(
     // Juster sannsynlighet basert på eksponering
     let adjustedProbability = scenario.baseProbability * scenario.exposureMultiplier[exposure]
 
-    // Juster basert på svar
-    if (answers["data_type"] === "health" || answers["data_type"] === "classified") {
+    // Juster basert på svar (støtter både enkeltvalg og multi-selekt)
+    if (answerIncludes(answers["data_type"], "health") || answerIncludes(answers["data_type"], "classified")) {
       adjustedProbability *= 1.2
     }
-    if (answers["integration"] === "critical_hub" || answers["integration"] === "extensive") {
+    if (answerIncludes(answers["integration"], "critical_hub") || answerIncludes(answers["integration"], "extensive")) {
       adjustedProbability *= 1.1
     }
-    if (answers["user_base"] === "public" || answers["user_base"] === "patients") {
+    if (answerIncludes(answers["user_base"], "public") || answerIncludes(answers["user_base"], "patients")) {
       adjustedProbability *= 1.1
     }
 
@@ -674,13 +681,13 @@ export function calculateRiskAssessment(
     // Juster konsekvens
     let adjustedConsequence: number = scenario.baseConsequence
 
-    if (answers["infrastructure_impact"] === "critical") {
+    if (answerIncludes(answers["infrastructure_impact"], "critical")) {
       adjustedConsequence = 3
-    } else if (answers["infrastructure_impact"] === "significant" && adjustedConsequence < 3) {
+    } else if (answerIncludes(answers["infrastructure_impact"], "significant") && adjustedConsequence < 3) {
       adjustedConsequence = Math.min(3, adjustedConsequence + 1)
     }
 
-    if (answers["confidentiality_impact"] === "severe" || answers["confidentiality_impact"] === "national") {
+    if (answerIncludes(answers["confidentiality_impact"], "severe") || answerIncludes(answers["confidentiality_impact"], "national")) {
       adjustedConsequence = 3
     }
 
