@@ -7,15 +7,19 @@ import { GradingStep } from "@/components/GradingStep"
 import { ResultsView } from "@/components/ResultsView"
 import { LegalOverview } from "@/components/LegalOverview"
 import { ClassificationWizard } from "@/components/ClassificationWizard"
+import { ROSAnalysis } from "@/components/ROSAnalysis"
 import { ExposureType, GradingLevel } from "@/types"
+import { calculateRiskAssessment, RiskAssessment } from "@/data/ros-data"
 import { Shield, BookOpen, HelpCircle } from "lucide-react"
 
-type Step = "start" | "exposure" | "grading" | "results" | "legal" | "classification"
+type Step = "start" | "exposure" | "grading" | "results" | "legal" | "classification" | "ros"
 
 export default function Home() {
   const [step, setStep] = useState<Step>("start")
   const [exposure, setExposure] = useState<ExposureType | null>(null)
   const [grading, setGrading] = useState<GradingLevel | null>(null)
+  const [rosAssessments, setRosAssessments] = useState<RiskAssessment[]>([])
+  const [rosExposure, setRosExposure] = useState<"internet" | "helsenett" | "internal">("internal")
 
   const handleExposureSelect = (type: ExposureType) => {
     setExposure(type)
@@ -42,6 +46,8 @@ export default function Home() {
       setStep("start")
     } else if (step === "classification") {
       setStep("start")
+    } else if (step === "ros") {
+      setStep("classification")
     }
   }
 
@@ -49,6 +55,23 @@ export default function Home() {
     setGrading(level)
     setExposure(exposureType)
     setStep("results")
+  }
+
+  const handleROS = (
+    level: 1 | 2 | 3 | 4,
+    exposureType: "internet" | "helsenett",
+    answers: Record<string, string>,
+    flags: string[]
+  ) => {
+    const fullExposure = answers["network_exposure"] === "internal_only" || answers["network_exposure"] === "vpn"
+      ? "internal"
+      : exposureType
+    const assessments = calculateRiskAssessment(answers, flags, fullExposure)
+    setRosAssessments(assessments)
+    setRosExposure(fullExposure)
+    setGrading(level)
+    setExposure(exposureType)
+    setStep("ros")
   }
 
   return (
@@ -68,7 +91,7 @@ export default function Home() {
               <button
                 onClick={() => setStep("start")}
                 className={`rounded-lg px-4 py-2 text-sm transition-all ${
-                  step === "start" || step === "exposure" || step === "grading" || step === "results"
+                  step === "start" || step === "exposure" || step === "grading" || step === "results" || step === "classification" || step === "ros"
                     ? "bg-primary/10 text-foreground"
                     : "text-muted-foreground hover:bg-muted hover:text-foreground"
                 }`}
@@ -155,7 +178,18 @@ export default function Home() {
               {step === "classification" && (
                 <ClassificationWizard
                   onComplete={handleClassificationComplete}
+                  onROS={handleROS}
                   onBack={handleBack}
+                />
+              )}
+
+              {step === "ros" && grading && (
+                <ROSAnalysis
+                  assessments={rosAssessments}
+                  exposure={rosExposure}
+                  level={grading}
+                  onBack={handleBack}
+                  onViewMeasures={() => setStep("results")}
                 />
               )}
             </div>

@@ -17,15 +17,17 @@ import {
   AlertTriangle,
   Info,
   Shield,
+  FileText,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 interface ClassificationWizardProps {
   onComplete: (level: 1 | 2 | 3 | 4, exposure: "internet" | "helsenett") => void
+  onROS: (level: 1 | 2 | 3 | 4, exposure: "internet" | "helsenett", answers: Record<string, string>, flags: string[]) => void
   onBack: () => void
 }
 
-export function ClassificationWizard({ onComplete, onBack }: ClassificationWizardProps) {
+export function ClassificationWizard({ onComplete, onROS, onBack }: ClassificationWizardProps) {
   const [currentStep, setCurrentStep] = useState(0)
   const [answers, setAnswers] = useState<Record<string, string>>({})
   const [showResult, setShowResult] = useState(false)
@@ -185,19 +187,35 @@ export function ClassificationWizard({ onComplete, onBack }: ClassificationWizar
         )}
 
         {/* Handlingsknapper */}
-        <div className="flex flex-col sm:flex-row gap-4">
-          <Button
-            onClick={() =>
-              onComplete(
-                result.level,
-                exposure === "internal" ? "helsenett" : exposure
-              )
-            }
-            className="flex-1 gap-2 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400"
-          >
-            <Shield className="h-4 w-4" />
-            Se sikringstiltak for dette nivået
-          </Button>
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col sm:flex-row gap-4">
+            <Button
+              onClick={() =>
+                onROS(
+                  result.level,
+                  exposure === "internal" ? "helsenett" : exposure,
+                  answers,
+                  result.flags
+                )
+              }
+              className="flex-1 gap-2 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-400 hover:to-red-400"
+            >
+              <FileText className="h-4 w-4" />
+              Generer ROS-analyse
+            </Button>
+            <Button
+              onClick={() =>
+                onComplete(
+                  result.level,
+                  exposure === "internal" ? "helsenett" : exposure
+                )
+              }
+              className="flex-1 gap-2 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400"
+            >
+              <Shield className="h-4 w-4" />
+              Se sikringstiltak
+            </Button>
+          </div>
           <Button
             variant="outline"
             onClick={() => {
@@ -205,7 +223,7 @@ export function ClassificationWizard({ onComplete, onBack }: ClassificationWizar
               setCurrentStep(0)
               setShowResult(false)
             }}
-            className="flex-1"
+            className="w-full"
           >
             Start på nytt
           </Button>
