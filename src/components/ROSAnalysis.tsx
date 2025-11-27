@@ -23,6 +23,8 @@ import {
   Check,
   Table,
   LayoutGrid,
+  CheckSquare,
+  Square,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -44,8 +46,36 @@ export function ROSAnalysis({
   const [expandedScenario, setExpandedScenario] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<"table" | "matrix" | "scenarios" | "summary">("table")
   const [copied, setCopied] = useState(false)
+  // Start med alle scenarier valgt
+  const [selectedScenarios, setSelectedScenarios] = useState<Set<string>>(
+    new Set(assessments.map(a => a.scenario.id))
+  )
 
   const matrix = generateRiskMatrix(assessments)
+
+  // Hjelpefunksjoner for valg
+  const toggleScenario = (id: string) => {
+    setSelectedScenarios(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(id)) {
+        newSet.delete(id)
+      } else {
+        newSet.add(id)
+      }
+      return newSet
+    })
+  }
+
+  const selectAll = () => {
+    setSelectedScenarios(new Set(assessments.map(a => a.scenario.id)))
+  }
+
+  const selectNone = () => {
+    setSelectedScenarios(new Set())
+  }
+
+  // Filtrerte vurderinger basert på valg
+  const selectedAssessments = assessments.filter(a => selectedScenarios.has(a.scenario.id))
 
   // Funksjon for å kopiere ROS-tabell med formatering
   const copyROSTable = async () => {
@@ -90,7 +120,7 @@ export function ROSAnalysis({
           </tr>
         </thead>
         <tbody>
-          ${assessments.map((a, i) => `
+          ${selectedAssessments.map((a, i) => `
             <tr>
               <td style="border: 1px solid #d1d5db; padding: 8px; font-weight: bold;">${i + 1}</td>
               <td style="border: 1px solid #d1d5db; padding: 8px; font-weight: bold;">${a.scenario.name}</td>
@@ -121,8 +151,9 @@ export function ROSAnalysis({
     // Generer ren tekst-versjon
     const plainText = `RISIKO- OG SÅRBARHETSANALYSE (ROS)
 Klassifisering: Nivå ${level} | Eksponering: ${exposureLabels[exposure]}
+Antall valgte risikoer: ${selectedAssessments.length} av ${assessments.length}
 
-${assessments.map((a, i) => `
+${selectedAssessments.map((a, i) => `
 ${i + 1}. ${a.scenario.name}
    Sårbarhet: ${a.scenario.vulnerabilityDescription}
    Konsekvens: ${a.scenario.consequenceDescription}
@@ -269,7 +300,30 @@ ${i + 1}. ${a.scenario.name}
       {/* ROS-tabell visning */}
       {activeTab === "table" && (
         <div className="space-y-4">
-          <div className="text-sm text-muted-foreground mb-4">
+          {/* Velg-kontroller */}
+          <div className="flex flex-wrap items-center gap-4 p-4 rounded-xl border border-border bg-card">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-foreground">Velg risikoer:</span>
+              <Badge variant="outline" className="font-mono">
+                {selectedScenarios.size} av {assessments.length}
+              </Badge>
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={selectAll} className="gap-1">
+                <CheckSquare className="h-4 w-4" />
+                Velg alle
+              </Button>
+              <Button variant="outline" size="sm" onClick={selectNone} className="gap-1">
+                <Square className="h-4 w-4" />
+                Fjern alle
+              </Button>
+            </div>
+            <div className="text-sm text-muted-foreground">
+              Klikk på en rad for å inkludere/ekskludere fra din ROS
+            </div>
+          </div>
+
+          <div className="text-sm text-muted-foreground">
             <span className="font-medium">K</span>=Konfidensialitet, <span className="font-medium">I</span>=Integritet, <span className="font-medium">T</span>=Tilgjengelighet
           </div>
 
@@ -278,6 +332,9 @@ ${i + 1}. ${a.scenario.name}
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-border bg-muted/50">
+                    <th className="text-center p-3 font-medium text-muted-foreground w-12">
+                      <span className="sr-only">Velg</span>
+                    </th>
                     <th className="text-left p-3 font-medium text-muted-foreground">ID#</th>
                     <th className="text-left p-3 font-medium text-muted-foreground min-w-[150px]">Scenario</th>
                     <th className="text-left p-3 font-medium text-muted-foreground min-w-[200px]">Sårbarhet beskrivelse</th>
@@ -307,9 +364,24 @@ ${i + 1}. ${a.scenario.name}
                   {assessments.map((assessment, index) => {
                     const beforeColors = getRiskColorClasses(assessment.riskScore)
                     const afterColors = getRiskColorClasses(assessment.mitigatedRiskScore)
+                    const isSelected = selectedScenarios.has(assessment.scenario.id)
 
                     return (
-                      <tr key={assessment.scenario.id} className="border-b border-border/50 last:border-0 hover:bg-muted/30">
+                      <tr
+                        key={assessment.scenario.id}
+                        onClick={() => toggleScenario(assessment.scenario.id)}
+                        className={cn(
+                          "border-b border-border/50 last:border-0 hover:bg-muted/30 cursor-pointer transition-opacity",
+                          !isSelected && "opacity-40"
+                        )}
+                      >
+                        <td className="p-3 text-center">
+                          {isSelected ? (
+                            <CheckSquare className="h-5 w-5 text-primary" />
+                          ) : (
+                            <Square className="h-5 w-5 text-muted-foreground" />
+                          )}
+                        </td>
                         <td className="p-3 text-foreground font-medium">{index + 1}</td>
                         <td className="p-3 text-foreground font-medium">{assessment.scenario.name}</td>
                         <td className="p-3 text-muted-foreground text-xs">{assessment.scenario.vulnerabilityDescription}</td>
@@ -713,6 +785,7 @@ ${i + 1}. ${a.scenario.name}
           variant="outline"
           className="flex-1 gap-2"
           onClick={copyROSTable}
+          disabled={selectedScenarios.size === 0}
         >
           {copied ? (
             <>
@@ -722,7 +795,7 @@ ${i + 1}. ${a.scenario.name}
           ) : (
             <>
               <Copy className="h-4 w-4" />
-              Kopier ROS-tabell
+              Kopier ROS-tabell ({selectedScenarios.size} valgt)
             </>
           )}
         </Button>
