@@ -537,8 +537,8 @@ export function ROSAnalysis({
                 <h4 className="font-medium text-foreground text-sm mb-2">Effekt av tiltak</h4>
                 <p className="text-sm text-muted-foreground">
                   Ved implementering av anbefalte tiltak vil risikoene reduseres betydelig.
-                  Gjennomsnittlig risikoscore før tiltak: <strong>{Math.round(assessments.reduce((sum, a) => sum + a.riskScore, 0) / assessments.length * 10) / 10}</strong>.
-                  Etter tiltak: <strong>{Math.round(assessments.reduce((sum, a) => sum + a.mitigatedRiskScore, 0) / assessments.length * 10) / 10}</strong>.
+                  Gjennomsnittlig risikoscore før tiltak: <strong>{assessments.length > 0 ? Math.round(assessments.reduce((sum, a) => sum + (a.riskScore || 0), 0) / assessments.length * 10) / 10 : 0}</strong>.
+                  Etter tiltak: <strong>{assessments.length > 0 ? Math.round(assessments.reduce((sum, a) => sum + (a.mitigatedRiskScore || 0), 0) / assessments.length * 10) / 10 : 0}</strong>.
                 </p>
               </div>
 
