@@ -11,6 +11,7 @@ import {
 } from "@/data/security-data"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { LegalBasisLinks } from "@/components/LegalBasisLinks"
 import { ArrowLeft, RotateCcw, Check, AlertTriangle } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -201,7 +202,7 @@ export function ResultsView({ exposure, grading, onBack, onReset }: ResultsViewP
                   </p>
                   <div className="mt-3 pt-3 border-t border-border/50">
                     <p className="text-xs text-muted-foreground">
-                      <span className="font-medium">Hjemmel:</span> {measure.legal_basis}
+                      <LegalBasisLinks legalBasis={measure.legal_basis} />
                     </p>
                   </div>
                 </div>
@@ -253,7 +254,7 @@ export function ResultsView({ exposure, grading, onBack, onReset }: ResultsViewP
                   </p>
                   <div className="mt-3 pt-3 border-t border-border/50">
                     <p className="text-xs text-muted-foreground">
-                      <span className="font-medium">Hjemmel:</span> {measure.legal_basis}
+                      <LegalBasisLinks legalBasis={measure.legal_basis} />
                     </p>
                   </div>
                 </div>
@@ -293,7 +294,7 @@ export function ResultsView({ exposure, grading, onBack, onReset }: ResultsViewP
                       {notif.recipient}
                     </td>
                     <td className="p-4 text-sm text-muted-foreground">
-                      {notif.legal_basis}
+                      <LegalBasisLinks legalBasis={notif.legal_basis} />
                     </td>
                   </tr>
                 ))}
