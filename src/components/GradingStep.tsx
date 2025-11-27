@@ -2,6 +2,10 @@
 
 import { ExposureType, GradingLevel } from "@/types"
 import { gradingLevels, exposureTypes } from "@/data/security-data"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { ArrowLeft, Info } from "lucide-react"
+import { cn } from "@/lib/utils"
 
 interface GradingStepProps {
   exposure: ExposureType
@@ -12,47 +16,41 @@ interface GradingStepProps {
 export function GradingStep({ exposure, onSelect, onBack }: GradingStepProps) {
   const exposureInfo = exposureTypes.find((e) => e.type === exposure)
 
-  const levelColors = {
-    1: "from-green-500/20 to-emerald-500/20 hover:from-green-500/30 hover:to-emerald-500/30 border-green-500/30",
-    2: "from-yellow-500/20 to-amber-500/20 hover:from-yellow-500/30 hover:to-amber-500/30 border-yellow-500/30",
-    3: "from-orange-500/20 to-red-500/20 hover:from-orange-500/30 hover:to-red-500/30 border-orange-500/30",
-    4: "from-red-500/20 to-purple-500/20 hover:from-red-500/30 hover:to-purple-500/30 border-red-500/30",
+  const levelStyles = {
+    1: "border-green-500/30 hover:border-green-500/50 bg-green-500/5",
+    2: "border-yellow-500/30 hover:border-yellow-500/50 bg-yellow-500/5",
+    3: "border-orange-500/30 hover:border-orange-500/50 bg-orange-500/5",
+    4: "border-red-500/30 hover:border-red-500/50 bg-red-500/5",
   }
 
   const levelTextColors = {
-    1: "text-green-400",
-    2: "text-yellow-400",
-    3: "text-orange-400",
-    4: "text-red-400",
+    1: "text-green-600 dark:text-green-400",
+    2: "text-yellow-600 dark:text-yellow-400",
+    3: "text-orange-600 dark:text-orange-400",
+    4: "text-red-600 dark:text-red-400",
   }
 
   return (
-    <div className="space-y-8 animate-fade-in">
-      <button
-        onClick={onBack}
-        className="flex items-center gap-2 text-white/70 hover:text-white transition-colors"
-      >
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-        </svg>
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <Button variant="ghost" onClick={onBack} className="gap-2">
+        <ArrowLeft className="h-4 w-4" />
         Tilbake
-      </button>
+      </Button>
 
       <div className="text-center">
-        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-cyan-500/20 text-cyan-400 text-sm mb-4">
+        <Badge variant="outline" className="mb-4">
           Steg 2 av 2
-        </div>
-        <h2 className="text-3xl font-bold text-white mb-4">
+        </Badge>
+        <h2 className="text-3xl font-bold text-foreground mb-4">
           Velg graderingsnivå
         </h2>
-        <p className="text-white/70 max-w-xl mx-auto mb-4">
+        <p className="text-muted-foreground max-w-xl mx-auto mb-4">
           Hvilken type informasjon behandler systemet?
         </p>
-        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-white/5 text-white/60 text-sm">
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          Valgt eksponering: <span className="text-white font-medium">{exposureInfo?.name}</span>
+        <div className="inline-flex items-center gap-2 rounded-lg border border-border bg-muted/50 px-4 py-2 text-sm">
+          <Info className="h-4 w-4 text-muted-foreground" />
+          <span className="text-muted-foreground">Valgt eksponering:</span>
+          <span className="font-medium text-foreground">{exposureInfo?.name}</span>
         </div>
       </div>
 
@@ -61,25 +59,40 @@ export function GradingStep({ exposure, onSelect, onBack }: GradingStepProps) {
           <button
             key={level.level}
             onClick={() => onSelect(level.level as GradingLevel)}
-            className={`group bg-gradient-to-br ${levelColors[level.level as keyof typeof levelColors]} backdrop-blur-lg rounded-2xl p-6 border text-left transition-all hover:scale-[1.02]`}
+            className={cn(
+              "group rounded-xl border p-6 text-left transition-all hover:shadow-lg",
+              levelStyles[level.level as keyof typeof levelStyles]
+            )}
           >
             <div className="flex items-start gap-4">
-              <div className={`w-10 h-10 rounded-full bg-black/30 flex items-center justify-center ${levelTextColors[level.level as keyof typeof levelTextColors]} font-bold text-lg`}>
+              <div
+                className={cn(
+                  "flex h-10 w-10 items-center justify-center rounded-full bg-background border font-bold text-lg",
+                  levelTextColors[level.level as keyof typeof levelTextColors]
+                )}
+              >
                 {level.level}
               </div>
               <div className="flex-1">
-                <h3 className={`text-lg font-semibold mb-2 ${levelTextColors[level.level as keyof typeof levelTextColors]}`}>
+                <h3
+                  className={cn(
+                    "text-lg font-semibold mb-2",
+                    levelTextColors[level.level as keyof typeof levelTextColors]
+                  )}
+                >
                   {level.name}
                 </h3>
-                <p className="text-white/70 text-sm mb-4">
+                <p className="text-muted-foreground text-sm mb-4">
                   {level.description}
                 </p>
                 <div className="space-y-1">
-                  <p className="text-white/50 text-xs font-medium uppercase tracking-wide">Eksempler:</p>
-                  <ul className="text-white/60 text-xs space-y-1">
+                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    Eksempler:
+                  </p>
+                  <ul className="text-xs text-muted-foreground space-y-1">
                     {level.examples.slice(0, 3).map((ex, i) => (
                       <li key={i} className="flex items-center gap-2">
-                        <span className="w-1 h-1 rounded-full bg-white/40"></span>
+                        <span className="h-1 w-1 rounded-full bg-muted-foreground" />
                         {ex}
                       </li>
                     ))}
@@ -87,9 +100,10 @@ export function GradingStep({ exposure, onSelect, onBack }: GradingStepProps) {
                 </div>
               </div>
             </div>
-            <div className="mt-4 pt-4 border-t border-white/10">
-              <p className="text-white/50 text-xs">
-                <span className="font-medium">Lovgrunnlag:</span> {level.legalBasis.join(", ")}
+            <div className="mt-4 pt-4 border-t border-border/50">
+              <p className="text-xs text-muted-foreground">
+                <span className="font-medium">Lovgrunnlag:</span>{" "}
+                {level.legalBasis.join(", ")}
               </p>
             </div>
           </button>

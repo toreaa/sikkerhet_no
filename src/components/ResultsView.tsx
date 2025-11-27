@@ -9,6 +9,10 @@ import {
   notificationRequirements,
   importantNotes,
 } from "@/data/security-data"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { ArrowLeft, RotateCcw, Check, AlertTriangle } from "lucide-react"
+import { cn } from "@/lib/utils"
 
 interface ResultsViewProps {
   exposure: ExposureType
@@ -45,48 +49,41 @@ export function ResultsView({ exposure, grading, onBack, onReset }: ResultsViewP
   const progress = totalItems > 0 ? (checkedCount / totalItems) * 100 : 0
 
   return (
-    <div className="space-y-8 animate-fade-in">
-      <button
-        onClick={onBack}
-        className="flex items-center gap-2 text-white/70 hover:text-white transition-colors"
-      >
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-        </svg>
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <Button variant="ghost" onClick={onBack} className="gap-2">
+        <ArrowLeft className="h-4 w-4" />
         Tilbake
-      </button>
+      </Button>
 
       {/* Header */}
-      <div className="bg-black/40 backdrop-blur-lg rounded-2xl p-6 border border-white/10">
+      <div className="rounded-xl border border-border bg-card p-6">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h2 className="text-2xl font-bold text-white mb-2">
+            <h2 className="text-2xl font-bold text-foreground mb-2">
               Påkrevde sikringstiltak
             </h2>
             <div className="flex flex-wrap gap-2">
-              <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/20 text-cyan-400 text-sm">
-                {exposureInfo?.name}
-              </span>
-              <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/20 text-purple-400 text-sm">
+              <Badge variant="outline">{exposureInfo?.name}</Badge>
+              <Badge variant="secondary">
                 Nivå {grading}: {gradingInfo?.name}
-              </span>
+              </Badge>
             </div>
           </div>
-          <button
-            onClick={onReset}
-            className="px-4 py-2 rounded-lg bg-white/10 text-white hover:bg-white/20 transition-colors text-sm"
-          >
+          <Button variant="outline" onClick={onReset} className="gap-2">
+            <RotateCcw className="h-4 w-4" />
             Start på nytt
-          </button>
+          </Button>
         </div>
 
         {/* Progress */}
         <div className="mt-6">
           <div className="flex items-center justify-between text-sm mb-2">
-            <span className="text-white/70">Fremdrift</span>
-            <span className="text-white font-medium">{checkedCount} av {totalItems} tiltak</span>
+            <span className="text-muted-foreground">Fremdrift</span>
+            <span className="font-medium text-foreground">
+              {checkedCount} av {totalItems} tiltak
+            </span>
           </div>
-          <div className="h-2 bg-white/10 rounded-full overflow-hidden">
+          <div className="h-2 rounded-full bg-muted overflow-hidden">
             <div
               className="h-full bg-gradient-to-r from-cyan-500 to-blue-500 transition-all duration-300"
               style={{ width: `${progress}%` }}
@@ -101,15 +98,17 @@ export function ResultsView({ exposure, grading, onBack, onReset }: ResultsViewP
           {applicableNotes.map((note, i) => (
             <div
               key={i}
-              className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4"
+              className="rounded-xl border border-yellow-500/30 bg-yellow-500/10 p-4"
             >
               <div className="flex items-start gap-3">
-                <svg className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                </svg>
+                <AlertTriangle className="h-5 w-5 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5" />
                 <div>
-                  <h4 className="text-amber-400 font-semibold text-sm">{note.title}</h4>
-                  <p className="text-white/70 text-sm mt-1">{note.description}</p>
+                  <h4 className="font-semibold text-yellow-600 dark:text-yellow-400 text-sm">
+                    {note.title}
+                  </h4>
+                  <p className="text-muted-foreground text-sm mt-1">
+                    {note.description}
+                  </p>
                 </div>
               </div>
             </div>
@@ -118,35 +117,38 @@ export function ResultsView({ exposure, grading, onBack, onReset }: ResultsViewP
       )}
 
       {/* Tabs */}
-      <div className="flex gap-2 border-b border-white/10 pb-2">
+      <div className="flex gap-1 border-b border-border">
         <button
           onClick={() => setActiveTab("technical")}
-          className={`px-4 py-2 rounded-t-lg transition-all ${
+          className={cn(
+            "px-4 py-2 text-sm font-medium transition-all border-b-2 -mb-px",
             activeTab === "technical"
-              ? "bg-white/10 text-white border-b-2 border-cyan-500"
-              : "text-white/60 hover:text-white"
-          }`}
+              ? "border-primary text-foreground"
+              : "border-transparent text-muted-foreground hover:text-foreground"
+          )}
         >
           Tekniske tiltak ({technical.length})
         </button>
         <button
           onClick={() => setActiveTab("organizational")}
-          className={`px-4 py-2 rounded-t-lg transition-all ${
+          className={cn(
+            "px-4 py-2 text-sm font-medium transition-all border-b-2 -mb-px",
             activeTab === "organizational"
-              ? "bg-white/10 text-white border-b-2 border-cyan-500"
-              : "text-white/60 hover:text-white"
-          }`}
+              ? "border-primary text-foreground"
+              : "border-transparent text-muted-foreground hover:text-foreground"
+          )}
         >
-          Organisatoriske tiltak ({organizational.length})
+          Organisatoriske ({organizational.length})
         </button>
         {applicableNotifications.length > 0 && (
           <button
             onClick={() => setActiveTab("notifications")}
-            className={`px-4 py-2 rounded-t-lg transition-all ${
+            className={cn(
+              "px-4 py-2 text-sm font-medium transition-all border-b-2 -mb-px",
               activeTab === "notifications"
-                ? "bg-white/10 text-white border-b-2 border-cyan-500"
-                : "text-white/60 hover:text-white"
-            }`}
+                ? "border-primary text-foreground"
+                : "border-transparent text-muted-foreground hover:text-foreground"
+            )}
           >
             Varslingskrav ({applicableNotifications.length})
           </button>
@@ -155,124 +157,144 @@ export function ResultsView({ exposure, grading, onBack, onReset }: ResultsViewP
 
       {/* Content */}
       <div className="space-y-4">
-        {activeTab === "technical" && (
-          <>
-            {technical.map((measure) => (
-              <div
-                key={measure.id}
-                className={`bg-black/40 backdrop-blur-lg rounded-xl p-5 border transition-all ${
-                  checkedItems.has(measure.id)
-                    ? "border-green-500/50 bg-green-500/5"
-                    : "border-white/10 hover:border-white/20"
-                }`}
-              >
-                <div className="flex items-start gap-4">
-                  <button
-                    onClick={() => toggleCheck(measure.id)}
-                    className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center flex-shrink-0 transition-all ${
-                      checkedItems.has(measure.id)
-                        ? "bg-green-500 border-green-500"
-                        : "border-white/30 hover:border-white/50"
-                    }`}
-                  >
-                    {checkedItems.has(measure.id) && (
-                      <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                      </svg>
-                    )}
-                  </button>
-                  <div className="flex-1">
-                    <div className="flex items-start justify-between gap-4">
-                      <h3 className={`font-semibold ${checkedItems.has(measure.id) ? "text-green-400" : "text-white"}`}>
-                        {measure.name}
-                      </h3>
-                      <span className="px-2 py-1 rounded text-xs bg-red-500/20 text-red-400 flex-shrink-0">
-                        Obligatorisk
-                      </span>
-                    </div>
-                    <p className="text-white/60 text-sm mt-2">{measure.description}</p>
-                    <div className="mt-3 pt-3 border-t border-white/5">
-                      <p className="text-white/40 text-xs">
-                        <span className="font-medium">Hjemmel:</span> {measure.legal_basis}
-                      </p>
-                    </div>
+        {activeTab === "technical" &&
+          technical.map((measure) => (
+            <div
+              key={measure.id}
+              className={cn(
+                "rounded-xl border bg-card p-5 transition-all",
+                checkedItems.has(measure.id)
+                  ? "border-green-500/50 bg-green-500/5"
+                  : "border-border hover:border-border/80"
+              )}
+            >
+              <div className="flex items-start gap-4">
+                <button
+                  onClick={() => toggleCheck(measure.id)}
+                  className={cn(
+                    "flex h-6 w-6 items-center justify-center rounded-lg border-2 flex-shrink-0 transition-all",
+                    checkedItems.has(measure.id)
+                      ? "bg-green-500 border-green-500 text-white"
+                      : "border-muted-foreground/30 hover:border-muted-foreground/50"
+                  )}
+                >
+                  {checkedItems.has(measure.id) && <Check className="h-4 w-4" />}
+                </button>
+                <div className="flex-1">
+                  <div className="flex items-start justify-between gap-4">
+                    <h3
+                      className={cn(
+                        "font-semibold",
+                        checkedItems.has(measure.id)
+                          ? "text-green-600 dark:text-green-400"
+                          : "text-foreground"
+                      )}
+                    >
+                      {measure.name}
+                    </h3>
+                    <Badge variant="destructive" className="text-xs flex-shrink-0">
+                      Obligatorisk
+                    </Badge>
+                  </div>
+                  <p className="text-muted-foreground text-sm mt-2">
+                    {measure.description}
+                  </p>
+                  <div className="mt-3 pt-3 border-t border-border/50">
+                    <p className="text-xs text-muted-foreground">
+                      <span className="font-medium">Hjemmel:</span> {measure.legal_basis}
+                    </p>
                   </div>
                 </div>
               </div>
-            ))}
-          </>
-        )}
+            </div>
+          ))}
 
-        {activeTab === "organizational" && (
-          <>
-            {organizational.map((measure) => (
-              <div
-                key={measure.id}
-                className={`bg-black/40 backdrop-blur-lg rounded-xl p-5 border transition-all ${
-                  checkedItems.has(measure.id)
-                    ? "border-green-500/50 bg-green-500/5"
-                    : "border-white/10 hover:border-white/20"
-                }`}
-              >
-                <div className="flex items-start gap-4">
-                  <button
-                    onClick={() => toggleCheck(measure.id)}
-                    className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center flex-shrink-0 transition-all ${
-                      checkedItems.has(measure.id)
-                        ? "bg-green-500 border-green-500"
-                        : "border-white/30 hover:border-white/50"
-                    }`}
-                  >
-                    {checkedItems.has(measure.id) && (
-                      <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                      </svg>
-                    )}
-                  </button>
-                  <div className="flex-1">
-                    <div className="flex items-start justify-between gap-4">
-                      <h3 className={`font-semibold ${checkedItems.has(measure.id) ? "text-green-400" : "text-white"}`}>
-                        {measure.name}
-                      </h3>
-                      <span className="px-2 py-1 rounded text-xs bg-red-500/20 text-red-400 flex-shrink-0">
-                        Obligatorisk
-                      </span>
-                    </div>
-                    <p className="text-white/60 text-sm mt-2">{measure.description}</p>
-                    <div className="mt-3 pt-3 border-t border-white/5">
-                      <p className="text-white/40 text-xs">
-                        <span className="font-medium">Hjemmel:</span> {measure.legal_basis}
-                      </p>
-                    </div>
+        {activeTab === "organizational" &&
+          organizational.map((measure) => (
+            <div
+              key={measure.id}
+              className={cn(
+                "rounded-xl border bg-card p-5 transition-all",
+                checkedItems.has(measure.id)
+                  ? "border-green-500/50 bg-green-500/5"
+                  : "border-border hover:border-border/80"
+              )}
+            >
+              <div className="flex items-start gap-4">
+                <button
+                  onClick={() => toggleCheck(measure.id)}
+                  className={cn(
+                    "flex h-6 w-6 items-center justify-center rounded-lg border-2 flex-shrink-0 transition-all",
+                    checkedItems.has(measure.id)
+                      ? "bg-green-500 border-green-500 text-white"
+                      : "border-muted-foreground/30 hover:border-muted-foreground/50"
+                  )}
+                >
+                  {checkedItems.has(measure.id) && <Check className="h-4 w-4" />}
+                </button>
+                <div className="flex-1">
+                  <div className="flex items-start justify-between gap-4">
+                    <h3
+                      className={cn(
+                        "font-semibold",
+                        checkedItems.has(measure.id)
+                          ? "text-green-600 dark:text-green-400"
+                          : "text-foreground"
+                      )}
+                    >
+                      {measure.name}
+                    </h3>
+                    <Badge variant="destructive" className="text-xs flex-shrink-0">
+                      Obligatorisk
+                    </Badge>
+                  </div>
+                  <p className="text-muted-foreground text-sm mt-2">
+                    {measure.description}
+                  </p>
+                  <div className="mt-3 pt-3 border-t border-border/50">
+                    <p className="text-xs text-muted-foreground">
+                      <span className="font-medium">Hjemmel:</span> {measure.legal_basis}
+                    </p>
                   </div>
                 </div>
               </div>
-            ))}
-          </>
-        )}
+            </div>
+          ))}
 
         {activeTab === "notifications" && (
-          <div className="bg-black/40 backdrop-blur-lg rounded-xl border border-white/10 overflow-hidden">
+          <div className="rounded-xl border border-border bg-card overflow-hidden">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-white/10">
-                  <th className="text-left p-4 text-white/70 text-sm font-medium">Hendelse</th>
-                  <th className="text-left p-4 text-white/70 text-sm font-medium">Tidsfrist</th>
-                  <th className="text-left p-4 text-white/70 text-sm font-medium">Mottaker</th>
-                  <th className="text-left p-4 text-white/70 text-sm font-medium">Hjemmel</th>
+                <tr className="border-b border-border bg-muted/50">
+                  <th className="text-left p-4 text-sm font-medium text-muted-foreground">
+                    Hendelse
+                  </th>
+                  <th className="text-left p-4 text-sm font-medium text-muted-foreground">
+                    Tidsfrist
+                  </th>
+                  <th className="text-left p-4 text-sm font-medium text-muted-foreground">
+                    Mottaker
+                  </th>
+                  <th className="text-left p-4 text-sm font-medium text-muted-foreground">
+                    Hjemmel
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {applicableNotifications.map((notif, i) => (
-                  <tr key={i} className="border-b border-white/5 last:border-0">
-                    <td className="p-4 text-white text-sm">{notif.event}</td>
+                  <tr key={i} className="border-b border-border/50 last:border-0">
+                    <td className="p-4 text-sm text-foreground">{notif.event}</td>
                     <td className="p-4">
-                      <span className="px-2 py-1 rounded text-xs bg-red-500/20 text-red-400">
+                      <Badge variant="destructive" className="text-xs">
                         {notif.deadline}
-                      </span>
+                      </Badge>
                     </td>
-                    <td className="p-4 text-white/70 text-sm">{notif.recipient}</td>
-                    <td className="p-4 text-white/50 text-sm">{notif.legal_basis}</td>
+                    <td className="p-4 text-sm text-muted-foreground">
+                      {notif.recipient}
+                    </td>
+                    <td className="p-4 text-sm text-muted-foreground">
+                      {notif.legal_basis}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -282,16 +304,13 @@ export function ResultsView({ exposure, grading, onBack, onReset }: ResultsViewP
       </div>
 
       {/* Legal basis summary */}
-      <div className="bg-black/30 backdrop-blur rounded-xl p-6 border border-white/10">
-        <h3 className="text-white font-semibold mb-4">Relevant lovgrunnlag</h3>
+      <div className="rounded-xl border border-border bg-card p-6">
+        <h3 className="font-semibold text-foreground mb-4">Relevant lovgrunnlag</h3>
         <div className="flex flex-wrap gap-2">
           {gradingInfo?.legalBasis.map((basis, i) => (
-            <span
-              key={i}
-              className="px-3 py-1 rounded-full bg-white/10 text-white/70 text-sm"
-            >
+            <Badge key={i} variant="secondary">
               {basis}
-            </span>
+            </Badge>
           ))}
         </div>
       </div>
