@@ -613,14 +613,45 @@ export function calculateRiskAssessment(
 ): RiskAssessment[] {
   const assessments: RiskAssessment[] = []
 
+  // Utled implisitte flagg for helsesektoren - de fleste systemer i helse behandler helseopplysninger
+  const impliedFlags = new Set(flags)
+
+  // Legg til health_data hvis det sannsynligvis er et helsesystem
+  if (flags.includes("normen_required") || flags.includes("patient_identifiable")) {
+    impliedFlags.add("health_data")
+  }
+
+  // Legg til exposure-relaterte flagg
+  if (exposure === "internet") {
+    impliedFlags.add("internet")
+    impliedFlags.add("public_facing")
+  } else if (exposure === "helsenett") {
+    impliedFlags.add("helsenett")
+  }
+
+  // I helsesektoren er de fleste systemer kritiske på et eller annet nivå
+  if (flags.includes("critical_system") || flags.includes("critical_infrastructure")) {
+    impliedFlags.add("critical_infrastructure")
+    impliedFlags.add("critical_system")
+  }
+
+  const allFlags = Array.from(impliedFlags)
+
   for (const scenario of threatScenarios) {
-    // Sjekk om scenariet er relevant
-    const isRelevant = scenario.relevantFlags.length === 0 ||
+    // Mer inkluderende relevansvurdering
+    // Inkluder scenario hvis:
+    // 1. Det ikke har noen spesifikke flagg-krav (alltid relevant)
+    // 2. Minst ett av scenariets flagg matcher brukerens flagg/eksponering
+    // 3. Scenariet er generelt relevant for helsesektoren (health_data flagg matcher)
+    const isRelevant =
+      scenario.relevantFlags.length === 0 ||
       scenario.relevantFlags.some(flag =>
-        flags.includes(flag) ||
-        exposure === flag ||
-        answers["network_exposure"] === flag
-      )
+        allFlags.includes(flag) ||
+        exposure === flag
+      ) ||
+      // Alltid inkluder scenariene som er universelt relevante i helsesektoren
+      scenario.relevantFlags.includes("health_data") ||
+      scenario.relevantFlags.includes("critical_system")
 
     if (!isRelevant) continue
 
