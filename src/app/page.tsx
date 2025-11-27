@@ -6,10 +6,11 @@ import { ExposureStep } from "@/components/ExposureStep"
 import { GradingStep } from "@/components/GradingStep"
 import { ResultsView } from "@/components/ResultsView"
 import { LegalOverview } from "@/components/LegalOverview"
+import { ClassificationWizard } from "@/components/ClassificationWizard"
 import { ExposureType, GradingLevel } from "@/types"
-import { Shield, BookOpen } from "lucide-react"
+import { Shield, BookOpen, HelpCircle } from "lucide-react"
 
-type Step = "start" | "exposure" | "grading" | "results" | "legal"
+type Step = "start" | "exposure" | "grading" | "results" | "legal" | "classification"
 
 export default function Home() {
   const [step, setStep] = useState<Step>("start")
@@ -39,7 +40,15 @@ export default function Home() {
       setStep("grading")
     } else if (step === "legal") {
       setStep("start")
+    } else if (step === "classification") {
+      setStep("start")
     }
+  }
+
+  const handleClassificationComplete = (level: 1 | 2 | 3 | 4, exposureType: "internet" | "helsenett") => {
+    setGrading(level)
+    setExposure(exposureType)
+    setStep("results")
   }
 
   return (
@@ -96,8 +105,14 @@ export default function Home() {
             description="Veileder for sikringstiltak basert på NIS2, GDPR, Normen og Sikkerhetsloven. Finn ut hvilke krav som gjelder for ditt system."
             actions={[
               {
-                text: "Start veileder",
+                text: "Klassifiser system",
                 variant: "glow",
+                icon: <HelpCircle className="h-4 w-4" />,
+                onClick: () => setStep("classification"),
+              },
+              {
+                text: "Velg manuelt",
+                variant: "outline",
                 icon: <Shield className="h-4 w-4" />,
                 onClick: () => setStep("exposure"),
               },
@@ -136,6 +151,13 @@ export default function Home() {
               )}
 
               {step === "legal" && <LegalOverview onBack={handleBack} />}
+
+              {step === "classification" && (
+                <ClassificationWizard
+                  onComplete={handleClassificationComplete}
+                  onBack={handleBack}
+                />
+              )}
             </div>
           </div>
         )}
