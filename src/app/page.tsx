@@ -8,11 +8,12 @@ import { ResultsView } from "@/components/ResultsView"
 import { LegalOverview } from "@/components/LegalOverview"
 import { ClassificationWizard } from "@/components/ClassificationWizard"
 import { ROSAnalysis } from "@/components/ROSAnalysis"
+import { NIS2Checklist } from "@/components/NIS2Checklist"
 import { ExposureType, GradingLevel } from "@/types"
 import { calculateRiskAssessment, RiskAssessment } from "@/data/ros-data"
-import { Shield, BookOpen, HelpCircle } from "lucide-react"
+import { Shield, BookOpen, HelpCircle, ClipboardCheck } from "lucide-react"
 
-type Step = "start" | "exposure" | "grading" | "results" | "legal" | "classification" | "ros"
+type Step = "start" | "exposure" | "grading" | "results" | "legal" | "classification" | "ros" | "nis2"
 
 export default function Home() {
   const [step, setStep] = useState<Step>("start")
@@ -48,6 +49,8 @@ export default function Home() {
       setStep("start")
     } else if (step === "ros") {
       setStep("classification")
+    } else if (step === "nis2") {
+      setStep("start")
     }
   }
 
@@ -101,6 +104,16 @@ export default function Home() {
                 Veileder
               </button>
               <button
+                onClick={() => setStep("nis2")}
+                className={`rounded-lg px-4 py-2 text-sm transition-all ${
+                  step === "nis2"
+                    ? "bg-primary/10 text-foreground"
+                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                }`}
+              >
+                NIS2
+              </button>
+              <button
                 onClick={() => setStep("legal")}
                 className={`rounded-lg px-4 py-2 text-sm transition-all ${
                   step === "legal"
@@ -134,6 +147,12 @@ export default function Home() {
                 variant: "glow",
                 icon: <HelpCircle className="h-4 w-4" />,
                 onClick: () => setStep("classification"),
+              },
+              {
+                text: "NIS2 sjekkliste",
+                variant: "outline",
+                icon: <ClipboardCheck className="h-4 w-4" />,
+                onClick: () => setStep("nis2"),
               },
               {
                 text: "Velg manuelt",
@@ -193,6 +212,10 @@ export default function Home() {
                   onBack={handleBack}
                   onViewMeasures={() => setStep("results")}
                 />
+              )}
+
+              {step === "nis2" && (
+                <NIS2Checklist onBack={handleBack} />
               )}
             </div>
           </div>
