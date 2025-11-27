@@ -279,7 +279,8 @@ export const exposureQuestions: ClassificationQuestion[] = [
   {
     id: "network_exposure",
     question: "Hvordan er systemet tilgjengelig nettverksmessig?",
-    description: "Velg det som best beskriver hvordan systemet nås",
+    description: "Velg alle tilgangsmetoder som gjelder",
+    multiSelect: true,
     options: [
       {
         id: "internal_only",
@@ -398,16 +399,17 @@ export function calculateRecommendedLevel(
   return { level, confidence, flags, reasoning }
 }
 
-// Funksjon for å bestemme eksponering
+// Funksjon for å bestemme eksponering (velger den mest eksponerte)
 export function calculateExposure(
   answers: Record<string, string | string[]>
 ): "internet" | "helsenett" | "internal" {
   const networkAnswer = answers["network_exposure"]
-  const answer = Array.isArray(networkAnswer) ? networkAnswer[0] : networkAnswer
+  const selections = Array.isArray(networkAnswer) ? networkAnswer : [networkAnswer].filter(Boolean)
 
-  if (answer === "internet") {
+  // Prioriter mest eksponert: internet > helsenett > vpn > internal
+  if (selections.includes("internet")) {
     return "internet"
-  } else if (answer === "helsenett") {
+  } else if (selections.includes("helsenett")) {
     return "helsenett"
   }
   return "internal"
