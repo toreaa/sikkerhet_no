@@ -19,7 +19,8 @@ import {
   ChevronDown,
   ChevronUp,
   FileText,
-  Download,
+  Copy,
+  Check,
   Table,
   LayoutGrid,
 } from "lucide-react"
@@ -42,8 +43,113 @@ export function ROSAnalysis({
 }: ROSAnalysisProps) {
   const [expandedScenario, setExpandedScenario] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<"table" | "matrix" | "scenarios" | "summary">("table")
+  const [copied, setCopied] = useState(false)
 
   const matrix = generateRiskMatrix(assessments)
+
+  // Funksjon for å kopiere ROS-tabell med formatering
+  const copyROSTable = async () => {
+    const getRiskColor = (score: number) => {
+      if (score <= 3) return "#22c55e" // green
+      if (score <= 6) return "#eab308" // yellow
+      if (score <= 9) return "#f97316" // orange
+      return "#ef4444" // red
+    }
+
+    const exposureLabels: Record<string, string> = {
+      internet: "Internett-eksponert",
+      helsenett: "Helsenett-eksponert",
+      internal: "Internt nettverk",
+    }
+
+    // Generer HTML-tabell
+    const html = `
+      <h1 style="font-family: Arial, sans-serif; color: #1f2937;">Risiko- og Sårbarhetsanalyse (ROS)</h1>
+      <p style="font-family: Arial, sans-serif; color: #6b7280;">
+        <strong>Klassifisering:</strong> Nivå ${level} | <strong>Eksponering:</strong> ${exposureLabels[exposure]}
+      </p>
+      <p style="font-family: Arial, sans-serif; color: #6b7280; font-size: 12px;">
+        K=Konfidensialitet, I=Integritet, T=Tilgjengelighet | S=Sannsynlighet (1-4), K=Konsekvens (1-3)
+      </p>
+      <table style="border-collapse: collapse; width: 100%; font-family: Arial, sans-serif; font-size: 11px;">
+        <thead>
+          <tr style="background-color: #f3f4f6;">
+            <th style="border: 1px solid #d1d5db; padding: 8px; text-align: left;">ID#</th>
+            <th style="border: 1px solid #d1d5db; padding: 8px; text-align: left;">Scenario</th>
+            <th style="border: 1px solid #d1d5db; padding: 8px; text-align: left;">Sårbarhet beskrivelse</th>
+            <th style="border: 1px solid #d1d5db; padding: 8px; text-align: left;">Konsekvens beskrivelse</th>
+            <th style="border: 1px solid #d1d5db; padding: 8px; text-align: center;">K, I, T</th>
+            <th style="border: 1px solid #d1d5db; padding: 8px; text-align: left;">Eksisterende tiltak</th>
+            <th style="border: 1px solid #d1d5db; padding: 8px; text-align: center;">S</th>
+            <th style="border: 1px solid #d1d5db; padding: 8px; text-align: center;">K</th>
+            <th style="border: 1px solid #d1d5db; padding: 8px; text-align: center;">S×K</th>
+            <th style="border: 1px solid #d1d5db; padding: 8px; text-align: left;">Ytterligere tiltak</th>
+            <th style="border: 1px solid #d1d5db; padding: 8px; text-align: center;">S</th>
+            <th style="border: 1px solid #d1d5db; padding: 8px; text-align: center;">K</th>
+            <th style="border: 1px solid #d1d5db; padding: 8px; text-align: center;">S×K</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${assessments.map((a, i) => `
+            <tr>
+              <td style="border: 1px solid #d1d5db; padding: 8px; font-weight: bold;">${i + 1}</td>
+              <td style="border: 1px solid #d1d5db; padding: 8px; font-weight: bold;">${a.scenario.name}</td>
+              <td style="border: 1px solid #d1d5db; padding: 8px;">${a.scenario.vulnerabilityDescription}</td>
+              <td style="border: 1px solid #d1d5db; padding: 8px;">${a.scenario.consequenceDescription}</td>
+              <td style="border: 1px solid #d1d5db; padding: 8px; text-align: center;">${getCIALabel(a.scenario.ciaImpact)}</td>
+              <td style="border: 1px solid #d1d5db; padding: 8px;">${a.applicableExistingMeasures.map(m => `• ${m}`).join("<br>")}</td>
+              <td style="border: 1px solid #d1d5db; padding: 8px; text-align: center;">${a.adjustedProbability}</td>
+              <td style="border: 1px solid #d1d5db; padding: 8px; text-align: center;">${a.adjustedConsequence}</td>
+              <td style="border: 1px solid #d1d5db; padding: 8px; text-align: center; background-color: ${getRiskColor(a.riskScore)}; color: white; font-weight: bold;">${a.riskScore}</td>
+              <td style="border: 1px solid #d1d5db; padding: 8px;">${a.applicableAdditionalMeasures.map(m => `• ${m}`).join("<br>")}</td>
+              <td style="border: 1px solid #d1d5db; padding: 8px; text-align: center;">${a.mitigatedProbability}</td>
+              <td style="border: 1px solid #d1d5db; padding: 8px; text-align: center;">${a.mitigatedConsequence}</td>
+              <td style="border: 1px solid #d1d5db; padding: 8px; text-align: center; background-color: ${getRiskColor(a.mitigatedRiskScore)}; color: white; font-weight: bold;">${a.mitigatedRiskScore}</td>
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>
+      <p style="font-family: Arial, sans-serif; color: #6b7280; font-size: 11px; margin-top: 16px;">
+        <strong>Risikonivåer:</strong>
+        <span style="background-color: #22c55e; color: white; padding: 2px 6px; border-radius: 4px;">1-3 Lav</span>
+        <span style="background-color: #eab308; color: white; padding: 2px 6px; border-radius: 4px;">4-6 Moderat</span>
+        <span style="background-color: #f97316; color: white; padding: 2px 6px; border-radius: 4px;">7-9 Høy</span>
+        <span style="background-color: #ef4444; color: white; padding: 2px 6px; border-radius: 4px;">10-12 Kritisk</span>
+      </p>
+    `
+
+    // Generer ren tekst-versjon
+    const plainText = `RISIKO- OG SÅRBARHETSANALYSE (ROS)
+Klassifisering: Nivå ${level} | Eksponering: ${exposureLabels[exposure]}
+
+${assessments.map((a, i) => `
+${i + 1}. ${a.scenario.name}
+   Sårbarhet: ${a.scenario.vulnerabilityDescription}
+   Konsekvens: ${a.scenario.consequenceDescription}
+   CIA: ${getCIALabel(a.scenario.ciaImpact)}
+   Risiko før tiltak: S=${a.adjustedProbability} × K=${a.adjustedConsequence} = ${a.riskScore}
+   Eksisterende tiltak: ${a.applicableExistingMeasures.join(", ")}
+   Ytterligere tiltak: ${a.applicableAdditionalMeasures.join(", ")}
+   Risiko etter tiltak: S=${a.mitigatedProbability} × K=${a.mitigatedConsequence} = ${a.mitigatedRiskScore}
+`).join("\n")}
+`
+
+    try {
+      await navigator.clipboard.write([
+        new ClipboardItem({
+          "text/html": new Blob([html], { type: "text/html" }),
+          "text/plain": new Blob([plainText], { type: "text/plain" }),
+        }),
+      ])
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch {
+      // Fallback for eldre nettlesere
+      await navigator.clipboard.writeText(plainText)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    }
+  }
 
   // Statistikk
   const criticalCount = assessments.filter((a) => a.riskLevel === "critical").length
@@ -606,12 +712,19 @@ export function ROSAnalysis({
         <Button
           variant="outline"
           className="flex-1 gap-2"
-          onClick={() => {
-            alert("PDF-eksport kommer snart!")
-          }}
+          onClick={copyROSTable}
         >
-          <Download className="h-4 w-4" />
-          Eksporter ROS (PDF)
+          {copied ? (
+            <>
+              <Check className="h-4 w-4 text-green-500" />
+              Kopiert!
+            </>
+          ) : (
+            <>
+              <Copy className="h-4 w-4" />
+              Kopier ROS-tabell
+            </>
+          )}
         </Button>
       </div>
     </div>
