@@ -9,6 +9,7 @@ import { LegalOverview } from "@/components/LegalOverview"
 import { ClassificationWizard } from "@/components/ClassificationWizard"
 import { ROSAnalysis } from "@/components/ROSAnalysis"
 import { NIS2Checklist } from "@/components/NIS2Checklist"
+import { Footer } from "@/components/Footer"
 import { ExposureType, GradingLevel } from "@/types"
 import { calculateRiskAssessment, RiskAssessment } from "@/data/ros-data"
 import { Shield, BookOpen, HelpCircle, ClipboardCheck } from "lucide-react"
@@ -80,7 +81,7 @@ export default function Home() {
   }
 
   return (
-    <main className="min-h-screen">
+    <main className="min-h-screen flex flex-col">
       {/* Header */}
       <header className="fixed top-0 left-0 right-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-md">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -129,7 +130,7 @@ export default function Home() {
       </header>
 
       {/* Main Content */}
-      <div className="pt-16">
+      <div className="pt-16 flex-grow">
         {step === "start" && (
           <HeroSection
             badge={{
@@ -221,6 +222,8 @@ export default function Home() {
           </div>
         )}
       </div>
+
+      <Footer />
     </main>
   )
 }
