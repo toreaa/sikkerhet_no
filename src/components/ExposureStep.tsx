@@ -36,7 +36,7 @@ export function ExposureStep({ onSelect, onBack }: ExposureStepProps) {
           <button
             key={exp.type}
             onClick={() => onSelect(exp.type)}
-            className="group rounded-xl border border-border bg-card p-8 text-left transition-all hover:border-primary/50 hover:shadow-lg"
+            className="group rounded-xl border border-border bg-card p-8 text-left transition-all hover:border-primary/50 hover:shadow-lg overflow-hidden"
           >
             <div className="flex items-start gap-4">
               <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary transition-colors group-hover:bg-primary/20">
@@ -46,8 +46,8 @@ export function ExposureStep({ onSelect, onBack }: ExposureStepProps) {
                   <Lock className="h-6 w-6" />
                 )}
               </div>
-              <div className="flex-1">
-                <h3 className="text-xl font-semibold text-foreground mb-2 group-hover:text-primary transition-colors">
+              <div className="flex-1 min-w-0">
+                <h3 className="text-xl font-semibold text-foreground mb-2 group-hover:text-primary transition-colors break-words">
                   {exp.name}
                 </h3>
                 <p className="text-muted-foreground text-sm mb-4">
